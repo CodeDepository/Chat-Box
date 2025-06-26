@@ -1,18 +1,32 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const cors = require('cors');
 const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, '../public')));
+// ✅ CORS for Express routes (optional since we use only Socket.IO)
+app.use(cors({
+  origin: 'https://codedepository.github.io',
+  methods: ['GET', 'POST'],
+}));
 
-// communication
+// ✅ Socket.IO with CORS support
+const io = new Server(server, {
+  cors: {
+    origin: 'https://codedepository.github.io',
+    methods: ['GET', 'POST'],
+  }
+});
+
+// ✅ Your chat logic
 const users = {};
 
 io.on('connection', (socket) => {
+  console.log('🔌 Connected:', socket.id);
+
   socket.on('setName', (name) => {
     users[socket.id] = name;
   });
@@ -24,12 +38,12 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     delete users[socket.id];
+    console.log('❌ Disconnected:', socket.id);
   });
 });
 
-
-// Start server
-const PORT = 8080;
+// ✅ Start the server
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
-  console.log(`http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
